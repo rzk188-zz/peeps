@@ -1,0 +1,93 @@
+{
+  "project_name": "Peeps Web/Mobile App",
+  "theme": "LIGHT",
+  "archetype": "3 (Pastel & Soft)",
+  "language": "zh-TW",
+  "design_philosophy": "Cozy, bright, young, and social. Emulating a casual mobile game and social app blend. UI should feel like a cute digital room. High use of rounded chunky shapes, pastel colors, and character-driven interactions.",
+  "color_palette": {
+    "background": "#FFFBF5",
+    "surface": "#FFFFFF",
+    "primary": "#FFB5B5",
+    "secondary": "#A3E4D7",
+    "accent": "#A9CCE3",
+    "text_primary": "#2D3436",
+    "text_secondary": "#636E72",
+    "border": "#F3E8E0",
+    "chat_bubble_me": "#FFB5B5",
+    "chat_bubble_them": "#FFFFFF"
+  },
+  "typography": {
+    "font_family_primary": "Nunito, Noto Sans TC, sans-serif",
+    "headings": "text-2xl to text-4xl, font-black, tracking-tight, text-[#2D3436]",
+    "body": "text-base font-medium text-[#636E72]",
+    "buttons": "text-lg font-bold tracking-wide"
+  },
+  "layout_and_spacing": {
+    "container": "Since it is a mobile app clone built on web, use a mobile-first container: max-w-md mx-auto h-screen bg-[#FFFBF5] relative overflow-hidden shadow-2xl sm:rounded-[40px] sm:border-8 border-white sm:my-8",
+    "spacing_scale": "p-4, p-6. Generous spacing for a soft, breathable feel",
+    "border_radius": "Extremely rounded. Use rounded-2xl or rounded-3xl for cards, rounded-full for buttons and avatars."
+  },
+  "components": {
+    "buttons": "Chunky, bright. bg-[#FFB5B5] text-white rounded-full py-4 px-6 shadow-[0_4px_0_#E59393] active:translate-y-1 active:shadow-none transition-all",
+    "cards": "bg-white rounded-3xl p-5 shadow-sm border border-[#F3E8E0]",
+    "bottom_nav": "Fixed at bottom inside the max-w-md container. bg-white/90 backdrop-blur-xl h-20 rounded-t-[32px] flex justify-around items-center px-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50",
+    "chat_drawer": "Shadcn Drawer component, customized with rounded-t-[32px] bg-[#FFFBF5].",
+    "avatars": "Placed absolutely inside the room view. Use framer-motion for slight floating/bouncing idle animation."
+  },
+  "features_and_flows": {
+    "login": "Google login button centered, huge app title, floating avatar images in background. Must be emergent agent Google login.",
+    "room_view": "The main home page. Full container background uses room_bg. Furniture items are draggable (framer-motion drag) or absolute positioned. Friends' avatars appear here.",
+    "chat": "Accessible via bottom nav or clicking a friend. 1-on-1 and group chat inside the room.",
+    "friends_list": "Tab with list of friends, 'Add Friend' button, request management."
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "background",
+        "description": "The cozy isometric room background where avatars and furniture are placed",
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/c66c42aa1543356fb4cf8afb9ae26da246952683c343426390f6a9dbe7f73304.png"
+      },
+      {
+        "category": "avatar",
+        "description": "Cute girl avatar in pastel hoodie",
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/3e46545c79278c133799164acd666e7c72aa7c436014961309f815ddcebbfb97.png"
+      },
+      {
+        "category": "avatar",
+        "description": "Cute boy avatar in beanie",
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/66fa38ae37fcd04251fe0128624a8a121cb3d55e03694e044bfba9a214d11e1a.png"
+      },
+      {
+        "category": "furniture",
+        "description": "Cozy wooden bed",
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/124c816939449225ea90b6fb1f4bd55f26ccffd92e59609211d2dcd2af3efc2e.png"
+      },
+      {
+        "category": "furniture",
+        "description": "Potted monstera plant",
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/0176168c3a498c1c959fa985118cb5f6c8fe859f5eb68e218d5995d1261f48c9.png"
+      },
+      {
+        "category": "furniture",
+        "description": "Round coffee table",
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/25363f6e23e7b0585583d2d1ffe3ec1bceeb54cbd5a4d60b163266901f749f1f.png"
+      },
+      {
+        "category": "furniture",
+        "description": "Cozy floor lamp",
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/223db192f29e398a29a536d22c879a75fda0f269e77be79aeabaf76fe3620a6c.png"
+      }
+    ],
+    "icons": "Use lucide-react with strokeWidth={2.5} for a chunky, cute feel."
+  },
+  "instructions_to_main_agent": [
+    "Build the application in a mobile-first simulated container: <div className='max-w-md mx-auto h-screen relative bg-[#FFFBF5] overflow-hidden sm:border-8 sm:border-white sm:rounded-[40px] sm:shadow-2xl sm:my-8'>",
+    "All text content and interface strings MUST be in Traditional Chinese (繁體中文).",
+    "Use framer-motion to make elements feel playful and alive (e.g., scale on tap, avatars bobbing gently up and down).",
+    "Implement Google Login for authentication (Emergent Google community login).",
+    "The Home tab is the 'Small House' (小屋). Set the background image to the room_bg asset. Place the furniture and avatar images absolutely within this view. Implement drag-and-drop for furniture if possible using framer-motion's `drag` prop.",
+    "Friends List should allow viewing friends and 'visiting' their rooms. You can add friends by code/username.",
+    "Do not use generic Shadcn square borders. Override shadcn primitives to have `rounded-3xl`, soft pastel backgrounds, and remove sharp edges.",
+    "Always add `data-testid` to interactive elements."
+  ]
+}
