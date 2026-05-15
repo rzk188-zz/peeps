@@ -1,0 +1,35 @@
+{
+  "summary": "Backend-only testing for Peeps API. Seeded 3 test users + sessions directly into MongoDB and exercised all 17 endpoints/scenarios across catalog, auth, house, friends, chat, and logout. 17/17 pytest cases passed. Auth-gated routes correctly return 401 without bearer, 403 for non-friend house access, friend-add reverse-direction auto-accept works, chat messages sort ascending, /api/auth/session correctly rejects invalid tokens (verified Emergent demobackend call in backend logs).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/house/{user_id}", "issue": "ensure_house() is invoked for any other user opened by a friend; this silently creates a default house row for users who never logged in. Not strictly a bug since users always have a house once authenticated, but it allows side-effect writes on a GET. Consider only ensuring own house."},
+      {"endpoint": "POST /api/auth/session", "issue": "After OAuth, expires_at is stored as a datetime (used for TTL index) but created_at is an ISO string. Inconsistent types across docs. Works correctly, but document the convention."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_peeps_backend.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: in GET /api/house/{user_id} only call ensure_house for the requester's own id; for other users, return 404 if house missing instead of creating one.",
+    "Optional: standardize datetime storage (ISO string vs datetime) across collections."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 446 lines; still under 700 but growing — consider splitting into routers (auth/, house/, friends/, chat/) before further features.",
+    "TestPublic CORS allow_origins=['*'] combined with allow_credentials=True is technically invalid per spec; many browsers ignore credentials. Consider listing explicit origins.",
+    "FriendAddRequest does not validate friend_code length/charset — relies on uppercase normalization and DB lookup; acceptable but adds Pydantic constraints would be nicer.",
+    "chat_key uses '::' join of sorted ids — fine and deterministic.",
+    "All endpoints exclude _id via projection — good MongoDB hygiene."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "not tested (skipped per request)"},
+  "seed_data_creation": "3 test users (TEST_A/B/C) with friend codes TSTA*/TSTB*/TSTC* and bearer sessions inserted directly into MongoDB test_database; teardown removes users, sessions, houses, friendships, friend_requests, and chat_messages.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Pytest module fixture in /app/backend/tests/test_peeps_backend.py seeds 3 users in MongoDB at MONGO_URL/test_database and tears them down. BASE_URL defaults to https://peeps-social.preview.emergentagent.com; can override via EXPO_BACKEND_URL env. To re-run: `python -m pytest backend/tests/test_peeps_backend.py -v`. Note: TestLogout deletes user C's session — order of test classes matters, run with default collection order.",
+  "rca_of_issue": "N/A — no failures."
+}
