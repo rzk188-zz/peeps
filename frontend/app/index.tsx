@@ -120,10 +120,7 @@ export default function Login() {
         <View style={[styles.blob, styles.blobPink]} />
         <View style={[styles.blob, styles.blobBlue]} />
         <View style={[styles.blob, styles.blobMint]} />
-        <View style={styles.avatarsRow}>
-          <Image source={{ uri: ASSETS.avatarGirl }} style={styles.heroAvatar} />
-          <Image source={{ uri: ASSETS.avatarBoy }} style={[styles.heroAvatar, styles.heroAvatarBack]} />
-        </View>
+        <Text style={styles.heroEmoji}>🏠✨</Text>
       </View>
 
       <View style={styles.bottom}>
@@ -158,21 +155,10 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.bg },
   heroWrap: { flex: 1.1, position: "relative", overflow: "hidden" },
   blob: { position: "absolute", borderRadius: 999, opacity: 0.7 },
-  blobPink: { width: 280, height: 280, backgroundColor: colors.pink, top: -60, left: -60 },
-  blobBlue: { width: 220, height: 220, backgroundColor: colors.accent, top: 80, right: -50, opacity: 0.5 },
-  blobMint: { width: 200, height: 200, backgroundColor: colors.secondary, bottom: -30, left: 30, opacity: 0.5 },
-  avatarsRow: {
-    position: "absolute",
-    bottom: 24,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    gap: -30,
-  },
-  heroAvatar: { width: 180, height: 220, resizeMode: "contain" },
-  heroAvatarBack: { width: 160, height: 200, marginLeft: -30 },
+  blobPink: { width: 280, height: 280, backgroundColor: "#C44E7A", top: -60, left: -60, opacity: 0.85 },
+  blobBlue: { width: 220, height: 220, backgroundColor: "#1B7B85", top: 80, right: -50, opacity: 0.85 },
+  blobMint: { width: 200, height: 200, backgroundColor: "#1B7B85", bottom: -30, left: 30, opacity: 0.7 },
+  heroEmoji: { position: "absolute", bottom: 40, left: 0, right: 0, textAlign: "center", fontSize: 48 },
   bottom: {
     flex: 1,
     paddingHorizontal: 32,
@@ -181,42 +167,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: { fontSize: 56, fontWeight: "900", color: colors.text, letterSpacing: -1 },
-  subtitle: {
-    fontSize: 18,
-    color: colors.textSoft,
-    textAlign: "center",
-    marginTop: 12,
-    lineHeight: 26,
-    fontWeight: "600",
-  },
-  googleBtn: {
-    marginTop: 36,
-    backgroundColor: colors.primary,
-    paddingVertical: 18,
-    paddingHorizontal: 36,
-    borderRadius: 999,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6,
-    minWidth: 260,
-    justifyContent: "center",
-  },
-  googleIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    color: "#EA4335",
-    fontWeight: "900",
-    textAlign: "center",
-    lineHeight: 28,
-    fontSize: 18,
-  },
-  googleText: { color: "#fff", fontSize: 18, fontWeight: "800" },
+  subtitle: { fontSize: 18, color: colors.textSoft, textAlign: "center", marginTop: 12, lineHeight: 26, fontWeight: "600" },
+  googleBtn: { marginTop: 36, backgroundColor: colors.primary, paddingVertical: 18, paddingHorizontal: 36, borderRadius: 999, flexDirection: "row", alignItems: "center", gap: 12, minWidth: 260, justifyContent: "center" },
+  googleIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: "#fff", color: "#EA4335", fontWeight: "900", textAlign: "center", lineHeight: 28, fontSize: 18 },
+  googleText: { color: colors.bg, fontSize: 18, fontWeight: "900" },
   footer: { marginTop: 20, color: colors.textSoft, fontSize: 12 },
 });

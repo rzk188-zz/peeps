@@ -170,7 +170,13 @@ async def create_session(body: SessionRequest):
             "appearance": dict(DEFAULT_APPEARANCE),
             "created_at": now_iso(),
         }
-        await db.users.insert_one(dict(user))
+        try:
+            await db.users.insert_one(dict(user))
+        except Exception:
+            # Race: another concurrent session created the user. Re-fetch.
+            user = await db.users.find_one({"email": email}, {"_id": 0})
+            if not user:
+                raise HTTPException(status_code=500, detail="User creation failed")
         user.pop("_id", None)
     else:
         # refresh name/picture; ensure appearance field exists
