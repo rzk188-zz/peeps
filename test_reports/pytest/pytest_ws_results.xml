@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="13" time="18.151" timestamp="2026-05-16T05:54:25.389899+00:00" hostname="agent-env-f728ca53-6522-4950-bcab-6531527b3927"><testcase classname="tests.test_ws_room_backend.TestCatalogRegression" name="test_catalog_has_15_items_with_new_furniture" time="0.268" /><testcase classname="tests.test_ws_room_backend.TestWsConnect" name="test_no_join_message_disconnects_within_10s" time="15.194"><failure message="TimeoutError">/usr/local/lib/python3.11/asyncio/tasks.py:500: in wait_for
+    return fut.result()
+           ^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/websockets/asyncio/connection.py:305: in recv
+    return await self.recv_messages.get(decode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/websockets/asyncio/messages.py:158: in get
+    frame = await self.frames.get(not self.closed)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/websockets/asyncio/messages.py:51: in get
+    await self.get_waiter
+E   asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+tests/test_ws_room_backend.py:197: in test_no_join_message_disconnects_within_10s
+    await asyncio.wait_for(ws.recv(), timeout=15)
+/usr/local/lib/python3.11/asyncio/tasks.py:502: in wait_for
+    raise exceptions.TimeoutError() from exc
+E   TimeoutError</failure></testcase><testcase classname="tests.test_ws_room_backend.TestWsConnect" name="test_bad_token_closes_4001" time="0.224" /><testcase classname="tests.test_ws_room_backend.TestWsConnect" name="test_missing_room_key_closes_4001" time="0.203" /><testcase classname="tests.test_ws_room_backend.TestWsConnect" name="test_unknown_room_prefix_closes_4002" time="0.211" /><testcase classname="tests.test_ws_room_backend.TestWsConnect" name="test_first_msg_wrong_type_closes_4000" time="0.190" /><testcase classname="tests.test_ws_room_backend.TestWsSoloAuthz" name="test_solo_self_success_with_empty_state" time="0.206" /><testcase classname="tests.test_ws_room_backend.TestWsSoloAuthz" name="test_solo_non_friend_closes_4003" time="0.199" /><testcase classname="tests.test_ws_room_backend.TestWsSoloAuthz" name="test_solo_friend_success" time="0.214" /><testcase classname="tests.test_ws_room_backend.TestWsCohabAuthz" name="test_cohab_member_success" time="0.189" /><testcase classname="tests.test_ws_room_backend.TestWsCohabAuthz" name="test_cohab_non_member_closes_4003" time="0.200" /><testcase classname="tests.test_ws_room_backend.TestWsCohabAuthz" name="test_cohab_unknown_id_closes_4003" time="0.190" /><testcase classname="tests.test_ws_room_backend.TestWsTwoClients" name="test_two_users_join_state_and_broadcasts" time="0.466" /></testsuite></testsuites>

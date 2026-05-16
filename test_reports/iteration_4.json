@@ -1,0 +1,57 @@
+{
+  "summary": "Iteration 4 backend testing for the realtime room WebSocket (/api/ws/room) and catalog regression. Wrote /app/backend/tests/test_ws_room_backend.py with 13 tests covering all review_request bullets. 12/13 pass. 1 real bug found: when client connects but never sends the 'join' message, the server's asyncio.wait_for(...) timeout=10 fires but the WebSocket is NOT explicitly closed -> connection stays open indefinitely (confirmed against ws://localhost:8001 with 20s wait, never closed). All other WS flows verified end-to-end through preview tunnel: bad token -> 4001, missing room_key -> 4001, wrong-prefix room -> 4002, first msg not join -> 4000, solo::self -> empty state, solo::non_friend -> 4003, solo::friend -> state, cohab member -> state, non-member -> 4003, unknown cohab -> 4003. Two-client integration verified: state, join broadcast, move broadcast, ping/pong, leave-on-disconnect all work. Catalog regression confirmed: 15 items including chair/sofa/rug.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "WS /api/ws/room (server.py line 549-562, 631-638)",
+        "issue": "Idle-connect (no 'join' message within 10s) does NOT close the WebSocket. asyncio.TimeoutError is silently caught and the handler returns, but no explicit websocket.close() is called for the no-room_key/no-user_id path, so the connection remains open from the client perspective (verified 20s+ on localhost). Spec says 'server should disconnect within 10s'. Same issue applies to the bad-first-message path if the client doesn't observe the close frame (note: that path DOES call websocket.close(code=4000) so it works in practice).",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "WS /api/ws/room - close codes",
+        "issue": "When token is present but room_key is empty/missing, server closes with 4001 (same as bad token). Consider 4002 or a distinct code for clearer client handling. Currently tolerated."
+      },
+      {
+        "endpoint": "WS /api/ws/room - leave broadcast scope",
+        "issue": "On disconnect, finally block always broadcasts 'leave' to remaining members even if the user never successfully joined any room (room_key would be None so the guard `if room_key and user_id` saves it). Only minor: confirmed safe by current code, but fragile if code is refactored."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ws_room_backend.py",
+    "/app/test_reports/pytest/pytest_ws_results.xml"
+  ],
+  "action_items": [
+    "FIX (1 line): In server.py ws_room(), add an explicit `await websocket.close(code=4008)` (or 4000) inside the `except (WebSocketDisconnect, asyncio.TimeoutError)` block (or simply in a try/except in the finally), so idle clients are actively kicked at the 10s deadline. Suggested patch:\n\n    except (WebSocketDisconnect, asyncio.TimeoutError):\n        try:\n            await websocket.close(code=4008)\n        except Exception:\n            pass\n\nThis makes the test_no_join_message_disconnects_within_10s pass and prevents idle-WS resource leaks.",
+    "Optional: differentiate close codes (e.g. 4001 = bad token, 4004 = missing room_key) for clearer client error handling.",
+    "Optional: rerun /app/backend/tests/test_ws_room_backend.py after fix; expect 13/13."
+  ],
+  "critical_code_review_comments": [
+    "RoomManager uses an asyncio.Lock around all room mutations - good. Broadcast extracts target ws list under the lock and sends outside the lock - good for concurrency.",
+    "send_json failures inside broadcast are swallowed (`except Exception: pass`) - acceptable for best-effort realtime, but consider tracking dead sockets to remove stale users. Currently relies on WebSocketDisconnect in the recv loop, which only fires for the disconnecting peer, not for peers whose send fails.",
+    "Permission checks for solo (self / friend) and cohab (member of that exact cohab_id) are correct and match the spec. friendship lookup uses $or on both directions - correct.",
+    "first_msg validation: only checks first.get('type')=='join'; missing/empty token AND missing room_key both correctly fall through to 4001 because _ws_auth_user returns None on bad token and `not room_key` also triggers 4001.",
+    "server.py is now ~868 lines (was ~700). Consider splitting into routers (auth, house, friends, chat, cohab, ws_room) - it has crossed the 700-line guideline.",
+    "move handler casts x/y to float and walking to bool - good defensive parsing. No bounds checking on x/y (any float accepted); minor."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_ws_room_backend.py (new file, 13 tests)"
+  ],
+  "success_rate": {
+    "backend": "92% (12/13 new WS tests); 100% (15/15 expected) catalog regression item count + chair/sofa/rug presence verified; prior iteration 3 regression suites (peeps 17 + cohab 20 + appearance 11 = 48) not re-run this iteration but unchanged endpoints.",
+    "frontend": "skipped (backend-only per request)"
+  },
+  "seed_data_creation": "Module-scoped pytest_asyncio fixture seeds 6 users (A,B friends; C unrelated; X,Y cohabitants; Z non-member) plus 1 friendship and 1 cohabitation directly in Mongo via motor. All emails prefixed TEST_WS_. Cleanup deletes users/sessions/friendships/cohabitations/houses for those user_ids in fixture teardown.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "WS coverage lives in /app/backend/tests/test_ws_room_backend.py. Run with: pytest tests/test_ws_room_backend.py -v -o asyncio_mode=auto. Requires pip packages: websockets, pytest-asyncio (now installed). Uses EXPO_PUBLIC_BACKEND_URL fallback when EXPO_BACKEND_URL unset. After the idle-close fix lands in server.py, the one failing test (TestWsConnect::test_no_join_message_disconnects_within_10s) should pass without modification. Regression suites from iteration 3 (test_peeps_backend.py, test_cohab_backend.py, test_appearance_backend.py) were not re-run this iteration; main agent can run all together with: pytest /app/backend/tests/ -v -o asyncio_mode=auto.",
+  "rca_of_issue": "RCA for idle-connect bug: In server.py ws_room handler, line 553: `first = await asyncio.wait_for(websocket.receive_json(), timeout=10)`. When the 10s timer expires without a client message, asyncio.TimeoutError is raised. The except clause at line 631 catches it (`except (WebSocketDisconnect, asyncio.TimeoutError): pass`) and the function returns. However, Starlette's WebSocketRoute does NOT automatically send a close frame to the client when the endpoint coroutine returns after a TimeoutError-style exit on a WebSocket whose state is CONNECTED but never advanced past initial accept - in practice the socket FD lingers and clients see the connection as open until they themselves drop or time out. Reproduction: connect to ws://localhost:8001/api/ws/room, never send anything, observe client still receives no close after 20s. Mitigation: explicitly call `await websocket.close(code=4008)` in the timeout branch (1-line fix). Will not affect any other code path because only the no-room_key/no-user_id case currently lacks an explicit close call."
+}

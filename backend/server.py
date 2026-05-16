@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Header, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Header, Request, WebSocket, WebSocketDisconnect
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -7,6 +7,8 @@ import logging
 import random
 import string
 import uuid
+import json
+import asyncio
 import httpx
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -240,10 +242,13 @@ async def update_appearance(body: AppearanceUpdate, authorization: Optional[str]
 # ---------- Catalog ----------
 CATALOG = [
     {"catalog_id": "bed", "name": "舒適小床", "emoji": "🛏️"},
-    {"catalog_id": "plant", "name": "綠色植栽", "emoji": "🪴"},
     {"catalog_id": "table", "name": "圓茶几", "emoji": "🪑"},
-    {"catalog_id": "lamp", "name": "落地燈", "emoji": "💡"},
+    {"catalog_id": "chair", "name": "椅子", "emoji": "🪑"},
+    {"catalog_id": "sofa", "name": "沙發", "emoji": "🛋️"},
     {"catalog_id": "tv", "name": "電視", "emoji": "📺"},
+    {"catalog_id": "lamp", "name": "落地燈", "emoji": "💡"},
+    {"catalog_id": "plant", "name": "綠色植栽", "emoji": "🪴"},
+    {"catalog_id": "rug", "name": "地毯", "emoji": "🟫"},
     {"catalog_id": "book", "name": "書本", "emoji": "📚"},
     {"catalog_id": "cake", "name": "蛋糕", "emoji": "🍰"},
     {"catalog_id": "music", "name": "音響", "emoji": "🎵"},
@@ -468,6 +473,169 @@ async def list_chats(authorization: Optional[str] = Header(None)):
 @api_router.get("/")
 async def root():
     return {"message": "Peeps API"}
+
+
+# ---------- WebSocket Room Manager ----------
+class RoomManager:
+    def __init__(self):
+        self.rooms: dict[str, dict[str, dict]] = {}  # room_key -> { user_id: {ws, name, appearance, x, y} }
+        self.lock = asyncio.Lock()
+
+    async def join(self, room_key: str, user_id: str, ws: WebSocket, info: dict):
+        async with self.lock:
+            room = self.rooms.setdefault(room_key, {})
+            room[user_id] = {"ws": ws, **info}
+
+    async def leave(self, room_key: str, user_id: str):
+        async with self.lock:
+            room = self.rooms.get(room_key)
+            if room and user_id in room:
+                del room[user_id]
+                if not room:
+                    self.rooms.pop(room_key, None)
+
+    async def state(self, room_key: str, exclude: Optional[str] = None) -> List[dict]:
+        async with self.lock:
+            room = self.rooms.get(room_key, {})
+            return [
+                {
+                    "user_id": uid,
+                    "name": p.get("name"),
+                    "appearance": p.get("appearance"),
+                    "x": p.get("x", 0.5),
+                    "y": p.get("y", 0.6),
+                    "walking": p.get("walking", False),
+                }
+                for uid, p in room.items()
+                if uid != exclude
+            ]
+
+    async def update_pos(self, room_key: str, user_id: str, x: float, y: float, walking: bool):
+        async with self.lock:
+            room = self.rooms.get(room_key)
+            if room and user_id in room:
+                room[user_id]["x"] = x
+                room[user_id]["y"] = y
+                room[user_id]["walking"] = walking
+
+    async def broadcast(self, room_key: str, message: dict, exclude_user: Optional[str] = None):
+        async with self.lock:
+            room = self.rooms.get(room_key, {})
+            targets = [p["ws"] for uid, p in room.items() if uid != exclude_user]
+        for ws in targets:
+            try:
+                await ws.send_json(message)
+            except Exception:
+                pass
+
+
+room_manager = RoomManager()
+
+
+async def _ws_auth_user(token: str) -> Optional[Dict[str, Any]]:
+    session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
+    if not session:
+        return None
+    user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
+    return user
+
+
+@app.websocket("/api/ws/room")
+async def ws_room(websocket: WebSocket):
+    """Realtime room channel.
+    Client must send first message: {type:"join", token, room_key}
+    room_key forms: solo::<user_id>  or  cohab::<cohab_id>
+    """
+    await websocket.accept()
+    room_key: Optional[str] = None
+    user_id: Optional[str] = None
+    try:
+        first = await asyncio.wait_for(websocket.receive_json(), timeout=10)
+        if first.get("type") != "join":
+            await websocket.close(code=4000)
+            return
+        token = first.get("token", "")
+        room_key = first.get("room_key", "")
+        user = await _ws_auth_user(token)
+        if not user or not room_key:
+            await websocket.close(code=4001)
+            return
+        user_id = user["user_id"]
+
+        # Authorize room: solo::self, friend's solo, or own cohab
+        if room_key.startswith("solo::"):
+            owner_id = room_key[len("solo::"):]
+            if owner_id != user_id:
+                # must be friend
+                f = await db.friendships.find_one({
+                    "$or": [
+                        {"user_a": user_id, "user_b": owner_id},
+                        {"user_a": owner_id, "user_b": user_id},
+                    ]
+                })
+                if not f:
+                    await websocket.close(code=4003)
+                    return
+        elif room_key.startswith("cohab::"):
+            cohab_id = room_key[len("cohab::"):]
+            cohab = await db.cohabitations.find_one({"cohab_id": cohab_id}, {"_id": 0})
+            if not cohab or user_id not in (cohab.get("user_a"), cohab.get("user_b")):
+                await websocket.close(code=4003)
+                return
+        else:
+            await websocket.close(code=4002)
+            return
+
+        info = {
+            "name": user.get("name"),
+            "appearance": user.get("appearance"),
+            "x": first.get("x", 0.5),
+            "y": first.get("y", 0.6),
+            "walking": False,
+        }
+        await room_manager.join(room_key, user_id, websocket, info)
+
+        # Send full state to new joiner
+        await websocket.send_json({
+            "type": "state",
+            "users": await room_manager.state(room_key, exclude=user_id),
+        })
+        # Notify others
+        await room_manager.broadcast(room_key, {
+            "type": "join",
+            "user_id": user_id,
+            "name": info["name"],
+            "appearance": info["appearance"],
+            "x": info["x"],
+            "y": info["y"],
+        }, exclude_user=user_id)
+
+        # Loop
+        while True:
+            msg = await websocket.receive_json()
+            mtype = msg.get("type")
+            if mtype == "move":
+                x = float(msg.get("x", 0.5))
+                y = float(msg.get("y", 0.6))
+                walking = bool(msg.get("walking", False))
+                await room_manager.update_pos(room_key, user_id, x, y, walking)
+                await room_manager.broadcast(room_key, {
+                    "type": "move",
+                    "user_id": user_id,
+                    "x": x,
+                    "y": y,
+                    "walking": walking,
+                }, exclude_user=user_id)
+            elif mtype == "ping":
+                await websocket.send_json({"type": "pong"})
+    except (WebSocketDisconnect, asyncio.TimeoutError):
+        pass
+    except Exception as e:
+        logger.warning(f"ws error: {e}")
+    finally:
+        if room_key and user_id:
+            await room_manager.leave(room_key, user_id)
+            await room_manager.broadcast(room_key, {"type": "leave", "user_id": user_id})
 
 
 # ---------- Cohabitation ----------

@@ -30,7 +30,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSoft,
         tabBarStyle: {
-          backgroundColor: colors.surfaceDark,
+          backgroundColor: "#fff",
           borderTopLeftRadius: 28,
           borderTopRightRadius: 28,
           borderTopWidth: 0,
