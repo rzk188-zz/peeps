@@ -16,6 +16,7 @@ A cute social mobile app (inspired by Peeps - 與朋友同居, Taiwan) where use
 4. **Visit Friend's House** – view a friend's decorated room (read-only).
 5. **1-on-1 Chat** – send/receive text, poll-based refresh, bubble UI, KeyboardAvoidingView.
 6. **Profile** – avatar, name, email, friend code, logout.
+7. **Cohabitation 同居模式** – 2-person only. Invite from friends list (auto-accept on mutual invite). Shared house with 5 default items + both avatars (each user moves own avatar slot). Both can place/move/remove furniture. In-house chat room (`cohab::<id>` key). Mode switcher (個人 / 同居) on house screen. Leave-cohab from profile (deletes shared house + cohab chat).
 
 ## API Routes (all prefixed `/api`)
 - Auth: `POST /auth/session`, `GET /auth/me`, `POST /auth/logout`
