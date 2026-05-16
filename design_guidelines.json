@@ -1,93 +1,152 @@
 {
-  "project_name": "Peeps Web/Mobile App",
-  "theme": "LIGHT",
-  "archetype": "3 (Pastel & Soft)",
-  "language": "zh-TW",
-  "design_philosophy": "Cozy, bright, young, and social. Emulating a casual mobile game and social app blend. UI should feel like a cute digital room. High use of rounded chunky shapes, pastel colors, and character-driven interactions.",
-  "color_palette": {
-    "background": "#FFFBF5",
-    "surface": "#FFFFFF",
-    "primary": "#FFB5B5",
-    "secondary": "#A3E4D7",
-    "accent": "#A9CCE3",
-    "text_primary": "#2D3436",
-    "text_secondary": "#636E72",
-    "border": "#F3E8E0",
-    "chat_bubble_me": "#FFB5B5",
-    "chat_bubble_them": "#FFFFFF"
+  "theme": {
+    "mode": "dark",
+    "archetype": "Pixel-Art Dark Mode (Custom Retro)",
+    "description": "8-bit retro aesthetic mixed with a modern dark theme. Pill-shaped UI elements, pixel-art graphics, and a warm tan room floor contrasting with a deep dark background."
+  },
+  "colors": {
+    "background_main": "#0F0F12",
+    "surface_pill": "#2A2A2A",
+    "surface_room": "#E8D4A6",
+    "room_border": "#DDC79B",
+    "ring_active": "#FFD700",
+    "ring_inactive": "#444444",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#A0A0A0",
+    "text_dark": "#1A1A1A",
+    "energy_icon": "#00E5FF",
+    "coin_icon": "#FFD700",
+    "heart_icon": "#FF3B30",
+    "pill_border": "rgba(255, 255, 255, 0.1)"
   },
   "typography": {
-    "font_family_primary": "Nunito, Noto Sans TC, sans-serif",
-    "headings": "text-2xl to text-4xl, font-black, tracking-tight, text-[#2D3436]",
-    "body": "text-base font-medium text-[#636E72]",
-    "buttons": "text-lg font-bold tracking-wide"
+    "font_family_primary": "System",
+    "font_family_pixel_fallback": "Courier New",
+    "h1": {
+      "size": "24px",
+      "weight": "bold",
+      "color": "#FFFFFF"
+    },
+    "h2": {
+      "size": "18px",
+      "weight": "bold",
+      "color": "#FFFFFF"
+    },
+    "body": {
+      "size": "14px",
+      "weight": "normal",
+      "color": "#FFFFFF"
+    },
+    "tiny_stats": {
+      "size": "10px",
+      "weight": "bold",
+      "color": "#FFFFFF"
+    }
   },
-  "layout_and_spacing": {
-    "container": "Since it is a mobile app clone built on web, use a mobile-first container: max-w-md mx-auto h-screen bg-[#FFFBF5] relative overflow-hidden shadow-2xl sm:rounded-[40px] sm:border-8 border-white sm:my-8",
-    "spacing_scale": "p-4, p-6. Generous spacing for a soft, breathable feel",
-    "border_radius": "Extremely rounded. Use rounded-2xl or rounded-3xl for cards, rounded-full for buttons and avatars."
+  "spacing": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "16px",
+    "lg": "24px",
+    "xl": "32px",
+    "xxl": "48px"
   },
-  "components": {
-    "buttons": "Chunky, bright. bg-[#FFB5B5] text-white rounded-full py-4 px-6 shadow-[0_4px_0_#E59393] active:translate-y-1 active:shadow-none transition-all",
-    "cards": "bg-white rounded-3xl p-5 shadow-sm border border-[#F3E8E0]",
-    "bottom_nav": "Fixed at bottom inside the max-w-md container. bg-white/90 backdrop-blur-xl h-20 rounded-t-[32px] flex justify-around items-center px-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50",
-    "chat_drawer": "Shadcn Drawer component, customized with rounded-t-[32px] bg-[#FFFBF5].",
-    "avatars": "Placed absolutely inside the room view. Use framer-motion for slight floating/bouncing idle animation."
+  "shapes": {
+    "pill_radius": "9999px",
+    "circle_radius": "9999px",
+    "room_top_radius": "24px",
+    "chat_input_radius": "32px"
   },
-  "features_and_flows": {
-    "login": "Google login button centered, huge app title, floating avatar images in background. Must be emergent agent Google login.",
-    "room_view": "The main home page. Full container background uses room_bg. Furniture items are draggable (framer-motion drag) or absolute positioned. Friends' avatars appear here.",
-    "chat": "Accessible via bottom nav or clicking a friend. 1-on-1 and group chat inside the room.",
-    "friends_list": "Tab with list of friends, 'Add Friend' button, request management."
+  "shadows": {
+    "pill_glow": "0px 4px 12px rgba(0, 0, 0, 0.3)",
+    "item_shadow": "0px 2px 4px rgba(0, 0, 0, 0.15)"
   },
-  "assets": {
-    "images": [
+  "layout_specs": {
+    "avatar_ring_row": {
+      "height": "80px",
+      "padding_horizontal": "16px",
+      "gap": "12px",
+      "active_border_width": "3px",
+      "inactive_border_width": "2px",
+      "avatar_size": "56px"
+    },
+    "stats_bar": {
+      "height": "40px",
+      "padding_horizontal": "16px",
+      "pill_height": "28px",
+      "pill_padding_horizontal": "12px",
+      "gap": "8px"
+    },
+    "room_area": {
+      "flex": 1,
+      "background": "#E8D4A6",
+      "border_top_left_radius": "24px",
+      "border_top_right_radius": "24px",
+      "position": "relative"
+    },
+    "tab_pills_row": {
+      "position": "absolute",
+      "bottom": "90px",
+      "left": "0px",
+      "right": "0px",
+      "justify_content": "center",
+      "gap": "12px",
+      "pill_height": "36px",
+      "pill_padding_horizontal": "16px"
+    },
+    "chat_bottom_bar": {
+      "position": "absolute",
+      "bottom": "24px",
+      "left": "16px",
+      "right": "16px",
+      "height": "48px",
+      "background": "#2A2A2A",
+      "border_radius": "9999px",
+      "padding_horizontal": "12px"
+    }
+  },
+  "media": {
+    "characters": [
       {
-        "category": "background",
-        "description": "The cozy isometric room background where avatars and furniture are placed",
-        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/c66c42aa1543356fb4cf8afb9ae26da246952683c343426390f6a9dbe7f73304.png"
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/88ab6058bbd7fbbe1faa7773053f41391d5322005d9cf214d18e786d1fe1c39a.png",
+        "description": "Pixel art boy character front-facing"
       },
       {
-        "category": "avatar",
-        "description": "Cute girl avatar in pastel hoodie",
-        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/3e46545c79278c133799164acd666e7c72aa7c436014961309f815ddcebbfb97.png"
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/572bdccbcb045fac41cbcd2caaa5f08c9dccf3055ee6ae9d31400ed839fc6f8b.png",
+        "description": "Pixel art girl character with pink hair"
       },
       {
-        "category": "avatar",
-        "description": "Cute boy avatar in beanie",
-        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/66fa38ae37fcd04251fe0128624a8a121cb3d55e03694e044bfba9a214d11e1a.png"
-      },
-      {
-        "category": "furniture",
-        "description": "Cozy wooden bed",
-        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/124c816939449225ea90b6fb1f4bd55f26ccffd92e59609211d2dcd2af3efc2e.png"
-      },
-      {
-        "category": "furniture",
-        "description": "Potted monstera plant",
-        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/0176168c3a498c1c959fa985118cb5f6c8fe859f5eb68e218d5995d1261f48c9.png"
-      },
-      {
-        "category": "furniture",
-        "description": "Round coffee table",
-        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/25363f6e23e7b0585583d2d1ffe3ec1bceeb54cbd5a4d60b163266901f749f1f.png"
-      },
-      {
-        "category": "furniture",
-        "description": "Cozy floor lamp",
-        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/223db192f29e398a29a536d22c879a75fda0f269e77be79aeabaf76fe3620a6c.png"
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/890d97cb37a1e29613b1f87576ee92d923f094425a4daa6233cdb8ba7e5db226.png",
+        "description": "Pixel art boy character with hat"
       }
     ],
-    "icons": "Use lucide-react with strokeWidth={2.5} for a chunky, cute feel."
+    "furniture": [
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/7be72970c863a153eccdd6da09de97c896cc1524f6fa9f9a41ae672db582283b.png",
+        "description": "Pixel art bed"
+      },
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/cd4b356a720790f8a80271bad3b8bedb024eff8b923f8a734a552deea1b8563d.png",
+        "description": "Pixel art plant"
+      }
+    ],
+    "items": [
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/e2f18f40f4468469941539343be195e03a7f5e97fb656e08a79872db47435f0d.png",
+        "description": "Pixel art pet food bowl"
+      },
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/97b98978-bac4-4a61-91dc-a51413960b78/images/8e9ac6cf99c8d040a4c273165105974c1652f721e2db42a81e922966a7758cec.png",
+        "description": "Pixel art fish on plate"
+      }
+    ]
   },
-  "instructions_to_main_agent": [
-    "Build the application in a mobile-first simulated container: <div className='max-w-md mx-auto h-screen relative bg-[#FFFBF5] overflow-hidden sm:border-8 sm:border-white sm:rounded-[40px] sm:shadow-2xl sm:my-8'>",
-    "All text content and interface strings MUST be in Traditional Chinese (繁體中文).",
-    "Use framer-motion to make elements feel playful and alive (e.g., scale on tap, avatars bobbing gently up and down).",
-    "Implement Google Login for authentication (Emergent Google community login).",
-    "The Home tab is the 'Small House' (小屋). Set the background image to the room_bg asset. Place the furniture and avatar images absolutely within this view. Implement drag-and-drop for furniture if possible using framer-motion's `drag` prop.",
-    "Friends List should allow viewing friends and 'visiting' their rooms. You can add friends by code/username.",
-    "Do not use generic Shadcn square borders. Override shadcn primitives to have `rounded-3xl`, soft pastel backgrounds, and remove sharp edges.",
-    "Always add `data-testid` to interactive elements."
+  "implementation_instructions_to_main_agent": [
+    "Ensure the application renders in Dark Mode with #0F0F12 as the main safe-area background.",
+    "The avatar ring row must map to user's friends with active states showing a yellow (#FFD700) ring border.",
+    "For rendering Pixel Art in React Native/Expo, use resizeMode='contain' on <Image> tags. On Web platforms, apply style: { imageRendering: 'pixelated' } to preserve the crisp 8-bit edges and avoid blurry anti-aliasing.",
+    "Construct the room as a solid colored container (backgroundColor: #E8D4A6) filling the remaining flex space, bordered with 24px top radiuses.",
+    "All floating UI like 'Chat Input' and 'Tab Pills' must be layered absolute over the room and have fully rounded corners (borderRadius: 9999).",
+    "Interactive elements MUST have a data-testid attribute in kebab-case."
   ]
 }
