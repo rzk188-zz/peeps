@@ -68,4 +68,18 @@ export const api = {
   sendChat: (user_id: string, text: string) =>
     request<any>(`/chat/${user_id}`, { method: "POST", body: { text } }),
   chatList: () => request<any[]>("/chat-list"),
+  cohabMe: () => request<any>("/cohab/me"),
+  inviteCohab: (to_user_id: string) =>
+    request<any>("/cohab/invite", { method: "POST", body: { to_user_id } }),
+  listCohabInvites: () => request<any[]>("/cohab/invites"),
+  acceptCohab: (id: string) =>
+    request<any>(`/cohab/invites/${id}/accept`, { method: "POST" }),
+  rejectCohab: (id: string) =>
+    request(`/cohab/invites/${id}/reject`, { method: "POST" }),
+  updateCohab: (data: any) =>
+    request<any>("/cohab/me", { method: "PUT", body: data }),
+  leaveCohab: () => request("/cohab/me", { method: "DELETE" }),
+  getCohabChat: () => request<any[]>("/cohab/chat"),
+  sendCohabChat: (text: string) =>
+    request<any>("/cohab/chat", { method: "POST", body: { text } }),
 };

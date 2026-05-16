@@ -426,6 +426,207 @@ async def root():
     return {"message": "Peeps API"}
 
 
+# ---------- Cohabitation ----------
+async def get_my_cohab(user_id: str) -> Optional[Dict[str, Any]]:
+    return await db.cohabitations.find_one(
+        {"$or": [{"user_a": user_id}, {"user_b": user_id}]}, {"_id": 0}
+    )
+
+async def assemble_cohab_view(cohab: Dict[str, Any], me_id: str) -> Dict[str, Any]:
+    partner_id = cohab["user_b"] if cohab["user_a"] == me_id else cohab["user_a"]
+    partner = await db.users.find_one({"user_id": partner_id}, {"_id": 0})
+    return {"cohab": cohab, "partner": partner}
+
+
+@api_router.get("/cohab/me")
+async def get_cohab_me(authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    cohab = await get_my_cohab(me["user_id"])
+    if not cohab:
+        return {"cohab": None, "partner": None}
+    return await assemble_cohab_view(cohab, me["user_id"])
+
+
+@api_router.post("/cohab/invite")
+async def invite_cohab(body: CohabInviteCreate, authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    if body.to_user_id == me["user_id"]:
+        raise HTTPException(status_code=400, detail="不能邀請自己")
+    target = await db.users.find_one({"user_id": body.to_user_id}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="找不到使用者")
+    friendship = await db.friendships.find_one({
+        "$or": [
+            {"user_a": me["user_id"], "user_b": body.to_user_id},
+            {"user_a": body.to_user_id, "user_b": me["user_id"]},
+        ]
+    })
+    if not friendship:
+        raise HTTPException(status_code=400, detail="必須先成為朋友")
+    if await get_my_cohab(me["user_id"]):
+        raise HTTPException(status_code=400, detail="你已經有同居對象了")
+    if await get_my_cohab(body.to_user_id):
+        raise HTTPException(status_code=400, detail="對方已經有同居對象了")
+    # If they already invited me -> auto accept
+    reverse = await db.cohab_invites.find_one({
+        "from_user_id": body.to_user_id,
+        "to_user_id": me["user_id"],
+        "status": "pending",
+    })
+    if reverse:
+        return await _accept_cohab(reverse["invite_id"], me["user_id"])
+    existing = await db.cohab_invites.find_one({
+        "from_user_id": me["user_id"],
+        "to_user_id": body.to_user_id,
+        "status": "pending",
+    })
+    if existing:
+        return {"status": "pending"}
+    invite = {
+        "invite_id": str(uuid.uuid4()),
+        "from_user_id": me["user_id"],
+        "to_user_id": body.to_user_id,
+        "status": "pending",
+        "created_at": now_iso(),
+    }
+    await db.cohab_invites.insert_one(dict(invite))
+    return {"status": "sent"}
+
+
+@api_router.get("/cohab/invites")
+async def list_cohab_invites(authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    invites = await db.cohab_invites.find(
+        {"to_user_id": me["user_id"], "status": "pending"}, {"_id": 0}
+    ).to_list(1000)
+    from_ids = [i["from_user_id"] for i in invites]
+    senders = await db.users.find({"user_id": {"$in": from_ids}}, {"_id": 0}).to_list(1000)
+    sender_map = {u["user_id"]: u for u in senders}
+    return [{**i, "from_user": sender_map.get(i["from_user_id"])} for i in invites]
+
+
+async def _accept_cohab(invite_id: str, me_id: str):
+    invite = await db.cohab_invites.find_one({"invite_id": invite_id}, {"_id": 0})
+    if not invite or invite["to_user_id"] != me_id:
+        raise HTTPException(status_code=404, detail="邀請不存在")
+    if invite["status"] != "pending":
+        raise HTTPException(status_code=400, detail="此邀請已處理")
+    if await get_my_cohab(me_id) or await get_my_cohab(invite["from_user_id"]):
+        await db.cohab_invites.update_one(
+            {"invite_id": invite_id}, {"$set": {"status": "rejected"}}
+        )
+        raise HTTPException(status_code=400, detail="其中一方已有同居對象")
+    await db.cohab_invites.update_one(
+        {"invite_id": invite_id}, {"$set": {"status": "accepted"}}
+    )
+    # seed default items
+    default_items = [
+        {"item_id": str(uuid.uuid4()), "catalog_id": "bed", "x": 0.25, "y": 0.55},
+        {"item_id": str(uuid.uuid4()), "catalog_id": "bed", "x": 0.75, "y": 0.55},
+        {"item_id": str(uuid.uuid4()), "catalog_id": "table", "x": 0.5, "y": 0.7},
+        {"item_id": str(uuid.uuid4()), "catalog_id": "plant", "x": 0.85, "y": 0.45},
+        {"item_id": str(uuid.uuid4()), "catalog_id": "heart", "x": 0.5, "y": 0.35},
+    ]
+    cohab = {
+        "cohab_id": str(uuid.uuid4()),
+        "user_a": invite["from_user_id"],
+        "user_b": me_id,
+        "house_name": "我們的同居小屋",
+        "items": default_items,
+        "avatar_a_x": 0.35,
+        "avatar_a_y": 0.78,
+        "avatar_b_x": 0.65,
+        "avatar_b_y": 0.78,
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await db.cohabitations.insert_one(dict(cohab))
+    cohab.pop("_id", None)
+    return {"status": "accepted", "cohab": cohab}
+
+
+@api_router.post("/cohab/invites/{invite_id}/accept")
+async def accept_cohab(invite_id: str, authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    return await _accept_cohab(invite_id, me["user_id"])
+
+
+@api_router.post("/cohab/invites/{invite_id}/reject")
+async def reject_cohab(invite_id: str, authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    invite = await db.cohab_invites.find_one({"invite_id": invite_id}, {"_id": 0})
+    if not invite or invite["to_user_id"] != me["user_id"]:
+        raise HTTPException(status_code=404, detail="邀請不存在")
+    await db.cohab_invites.update_one(
+        {"invite_id": invite_id}, {"$set": {"status": "rejected"}}
+    )
+    return {"ok": True}
+
+
+@api_router.put("/cohab/me")
+async def update_cohab(body: CohabHouseUpdate, authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    cohab = await get_my_cohab(me["user_id"])
+    if not cohab:
+        raise HTTPException(status_code=404, detail="尚未同居")
+    update = {"updated_at": now_iso()}
+    if body.items is not None:
+        update["items"] = [i.dict() for i in body.items]
+    if body.house_name is not None:
+        update["house_name"] = body.house_name
+    # which avatar slot is mine?
+    is_a = cohab["user_a"] == me["user_id"]
+    if body.avatar_x is not None:
+        update["avatar_a_x" if is_a else "avatar_b_x"] = body.avatar_x
+    if body.avatar_y is not None:
+        update["avatar_a_y" if is_a else "avatar_b_y"] = body.avatar_y
+    await db.cohabitations.update_one({"cohab_id": cohab["cohab_id"]}, {"$set": update})
+    fresh = await db.cohabitations.find_one({"cohab_id": cohab["cohab_id"]}, {"_id": 0})
+    return await assemble_cohab_view(fresh, me["user_id"])
+
+
+@api_router.delete("/cohab/me")
+async def leave_cohab(authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    cohab = await get_my_cohab(me["user_id"])
+    if not cohab:
+        return {"ok": True}
+    await db.cohabitations.delete_one({"cohab_id": cohab["cohab_id"]})
+    await db.chat_messages.delete_many({"chat_key": f"cohab::{cohab['cohab_id']}"})
+    return {"ok": True}
+
+
+@api_router.get("/cohab/chat")
+async def get_cohab_chat(authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    cohab = await get_my_cohab(me["user_id"])
+    if not cohab:
+        raise HTTPException(status_code=404, detail="尚未同居")
+    key = f"cohab::{cohab['cohab_id']}"
+    msgs = await db.chat_messages.find({"chat_key": key}, {"_id": 0}).sort("created_at", 1).to_list(1000)
+    return msgs
+
+
+@api_router.post("/cohab/chat")
+async def send_cohab_chat(body: ChatSend, authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    cohab = await get_my_cohab(me["user_id"])
+    if not cohab:
+        raise HTTPException(status_code=404, detail="尚未同居")
+    partner_id = cohab["user_b"] if cohab["user_a"] == me["user_id"] else cohab["user_a"]
+    msg = {
+        "message_id": str(uuid.uuid4()),
+        "chat_key": f"cohab::{cohab['cohab_id']}",
+        "from_user_id": me["user_id"],
+        "to_user_id": partner_id,
+        "text": body.text,
+        "created_at": now_iso(),
+    }
+    await db.chat_messages.insert_one(dict(msg))
+    msg.pop("_id", None)
+    return msg
+
+
 app.include_router(api_router)
 
 app.add_middleware(

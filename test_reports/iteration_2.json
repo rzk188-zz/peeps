@@ -1,0 +1,44 @@
+{
+  "summary": "Backend-only testing for new /api/cohab/* (同居模式) endpoints + regression. Seeded 9 isolated test users + bearer sessions + friendships directly into MongoDB and exercised every cohab scenario from the request: auto-accept reverse-invite flow, explicit accept endpoint, reject, PUT items/avatar slot routing (user_a vs user_b), house_name update, 404 when no cohab on PUT and on chat GET/POST, cohab chat send + ascending sort, DELETE removes cohab + clears chat_messages with chat_key='cohab::<id>', and re-invite after delete. 20/20 new cohab tests passed. Prior 17/17 regression suite still green => 37/37 overall.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/cohab/invite", "issue": "Already-in-cohab guard (你已經有同居對象了) is checked AFTER the friendship guard. If A is already cohab'd with B and tries to invite B again, it returns 400 '你已經有同居對象了' (correct). But if A invites a non-friend while already cohab'd, the friendship check fires first and returns '必須先成為朋友' — slightly misleading; consider checking cohab status before friendship to give the more relevant error. Behaviour matches spec so kept as-is in tests."},
+      {"endpoint": "POST /api/cohab/invite (reverse auto-accept)", "issue": "On auto-accept via reverse path, the original pending invite (from target -> me) is updated to status='accepted' but a NEW invite document is never created. Fine. However the returned payload uses status='accepted' rather than something like 'auto_accepted' — clients can't easily distinguish auto-accept from explicit-accept response from /invite POST. Tests handle by checking presence of 'cohab' key."},
+      {"endpoint": "DELETE /api/cohab/me", "issue": "Returns 200 {ok:true} even when user has no cohab (idempotent). Acceptable but undocumented in spec."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cohab_backend.py",
+    "/app/backend/tests/test_peeps_backend.py",
+    "/app/test_reports/pytest/pytest_cohab_results.xml",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: reorder guards in POST /api/cohab/invite so 'already in cohab' is checked before 'must be friends' to surface the more actionable error.",
+    "Optional: distinguish auto-accepted vs explicit-accepted responses (e.g., status='auto_accepted') for cleaner client UX.",
+    "Optional: server.py is now 656 lines — still under 700 but consider splitting routers (auth/house/friends/chat/cohab) before next feature."
+  ],
+  "critical_code_review_comments": [
+    "Cohab uniqueness is enforced application-side via get_my_cohab() lookups. There is no unique index on user_a/user_b in db.cohabitations — race conditions could create two cohabs for the same user under high concurrency. Consider a compound partial index or transactional insert.",
+    "_accept_cohab() rejects only the specific invite when one party is already cohab'd; other pending invites involving that user remain pending. Consider auto-cancelling all pending invites for both users at cohab creation.",
+    "DELETE /api/cohab/me does not clear pending invites from/to either ex-partner. After break-up an old pending invite could still be accepted leading to surprise re-cohab. Recommend cleaning cohab_invites involving both users on delete.",
+    "PUT /api/cohab/me allows partial updates but does not validate items length / structure beyond pydantic — acceptable, just noting.",
+    "All endpoints exclude _id via projection — good MongoDB hygiene."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cohab_backend.py (new)"
+  ],
+  "success_rate": {"backend": "100% (20/20 new cohab + 17/17 prior regression = 37/37)", "frontend": "not tested (skipped per request)"},
+  "seed_data_creation": "9 test users (TEST_COHAB_A..I) with friend codes CO* and bearer sessions inserted directly into MongoDB test_database; friendships pre-seeded: A-B, D-E, F-G, H-I. C and remaining users intentionally friendless to test non-friend invite rejection. Teardown removes users, sessions, houses, friendships, friend_requests, cohab_invites, cohabitations (by id), and cohab chat_messages.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Two pytest files exist: /app/backend/tests/test_peeps_backend.py (prior endpoints, 17 cases) and /app/backend/tests/test_cohab_backend.py (cohab + regression, 20 cases). Both use module-scoped fixture that directly seeds MongoDB; safe to run independently or together. BASE_URL defaults to https://peeps-social.preview.emergentagent.com, override via EXPO_BACKEND_URL. Re-run: `python -m pytest backend/tests/ -v`. Note cohab DELETE test cleans its own chat messages; teardown additionally cleans cohabs by user id.",
+  "rca_of_issue": "N/A — no failures."
+}
