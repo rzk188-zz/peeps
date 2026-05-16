@@ -14,6 +14,7 @@ export default function RootLayout() {
           <Stack.Screen name="chat/[userId]" options={{ presentation: "card" }} />
           <Stack.Screen name="house/[userId]" options={{ presentation: "card" }} />
           <Stack.Screen name="cohab-chat" options={{ presentation: "card" }} />
+          <Stack.Screen name="customize" options={{ presentation: "card" }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

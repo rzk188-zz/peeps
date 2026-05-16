@@ -82,4 +82,6 @@ export const api = {
   getCohabChat: () => request<any[]>("/cohab/chat"),
   sendCohabChat: (text: string) =>
     request<any>("/cohab/chat", { method: "POST", body: { text } }),
+  updateAppearance: (data: any) =>
+    request<any>("/auth/appearance", { method: "PUT", body: data }),
 };

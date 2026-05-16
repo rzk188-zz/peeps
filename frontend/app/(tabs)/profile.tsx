@@ -6,6 +6,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { api } from "@/src/lib/api";
 import { useAuth } from "@/src/context/AuthContext";
 import { colors, ASSETS } from "@/src/theme";
+import { Avatar } from "@/src/components/Avatar";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -45,13 +46,23 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <Text style={styles.title}>我的</Text>
       <View style={styles.profileCard}>
-        <Image source={{ uri: user?.picture || ASSETS.avatarGirl }} style={styles.avatar} />
+        <View style={styles.avatarBox}>
+          <Avatar appearance={user?.appearance} size={120} />
+        </View>
         <Text style={styles.name}>{user?.name}</Text>
         <Text style={styles.email}>{user?.email}</Text>
         <View style={styles.codeBox}>
           <Text style={styles.codeLabel}>朋友代碼</Text>
           <Text testID="profile-friend-code" style={styles.codeValue}>{user?.friend_code}</Text>
         </View>
+        <TouchableOpacity
+          testID="customize-link"
+          style={styles.customizeBtn}
+          onPress={() => router.push("/customize")}
+        >
+          <Ionicons name="color-palette" size={16} color="#fff" />
+          <Text style={styles.customizeText}>編輯外觀</Text>
+        </TouchableOpacity>
       </View>
 
       {cohab?.partner && (
@@ -105,9 +116,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   title: { fontSize: 32, fontWeight: "900", color: colors.text, paddingHorizontal: 20, paddingVertical: 12 },
   profileCard: { alignItems: "center", paddingVertical: 20, marginHorizontal: 20, backgroundColor: "#fff", borderRadius: 28, borderWidth: 1, borderColor: colors.border },
+  avatarBox: { width: 140, height: 140, borderRadius: 70, backgroundColor: colors.pink, alignItems: "center", justifyContent: "flex-end", paddingBottom: 4 },
   avatar: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.bg },
   name: { fontSize: 22, fontWeight: "900", color: colors.text, marginTop: 12 },
   email: { color: colors.textSoft, marginTop: 4 },
+  customizeBtn: { flexDirection: "row", gap: 6, alignItems: "center", backgroundColor: colors.secondary, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999, marginTop: 12 },
+  customizeText: { color: "#fff", fontWeight: "900", fontSize: 13 },
   codeBox: { marginTop: 16, backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 999, alignItems: "center" },
   codeLabel: { color: "#fff", fontSize: 11, fontWeight: "700" },
   codeValue: { color: "#fff", fontSize: 22, fontWeight: "900", letterSpacing: 4 },

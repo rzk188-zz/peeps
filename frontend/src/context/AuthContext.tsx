@@ -7,6 +7,7 @@ type User = {
   name: string;
   picture?: string;
   friend_code: string;
+  appearance?: any;
 };
 
 type AuthCtx = {
@@ -15,6 +16,7 @@ type AuthCtx = {
   signInWithSessionToken: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  setUser: (u: User | null) => void;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -65,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ user, loading, signInWithSessionToken, signOut, refresh }}>
+    <Ctx.Provider value={{ user, loading, signInWithSessionToken, signOut, refresh, setUser }}>
       {children}
     </Ctx.Provider>
   );

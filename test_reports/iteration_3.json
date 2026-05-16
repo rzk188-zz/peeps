@@ -1,0 +1,45 @@
+{
+  "summary": "Iteration 3 backend testing for customizable avatar appearance feature. 11/11 new appearance tests + 37/37 regression tests = 48/48 passing. All review_request bullets covered: auth gate, partial merge, full body, unknown field ignored, /auth/me reflects update, back-fill on PUT for legacy users (no appearance field), /cohab/me partner.appearance included, /friends list items include appearance. DEFAULT_APPEARANCE constant has all 8 expected keys.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/auth/me (legacy user)",
+        "issue": "Legacy users without an `appearance` field do NOT get back-filled on /auth/me. Back-fill only happens in POST /api/auth/session (Emergent OAuth path) or on first PUT /api/auth/appearance. Frontend that calls /auth/me directly with a pre-existing Mongo user will see no appearance field until either re-login or first PUT. Consider also back-filling in get_current_user / /auth/me for full coverage. Currently tolerated by test (test_legacy_user_me_no_appearance_initially)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_appearance_backend.py",
+    "/app/test_reports/pytest/pytest_appearance_results.xml",
+    "/app/test_reports/pytest/pytest_regression_results.xml"
+  ],
+  "action_items": [
+    "Optional: back-fill DEFAULT_APPEARANCE in GET /api/auth/me for legacy users so that mobile clients that bypass /auth/session (e.g. direct token reuse) always see a populated appearance object. Currently only PUT /auth/appearance or re-session triggers back-fill."
+  ],
+  "critical_code_review_comments": [
+    "PUT /auth/appearance correctly uses body.dict(exclude_unset=True) for partial merge and ignores extras due to Pydantic AppearanceUpdate model (no extra='allow').",
+    "DEFAULT_APPEARANCE keys exactly match the 8 fields required by the spec.",
+    "GET /api/cohab/me and GET /api/friends both return raw user docs (with _id excluded) so partner.appearance and friend.appearance are included automatically — verified.",
+    "Minor: server.py is ~700 lines — close to the 700-line split threshold; consider splitting into routers (auth, house, friends, chat, cohab) if growth continues.",
+    "Minor: get_current_user does not back-fill appearance; only POST /auth/session does. /auth/me on a legacy user will return user without appearance — could surprise frontend."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_appearance_backend.py (created)"
+  ],
+  "success_rate": {
+    "backend": "100% (48/48 across appearance + regression suites)",
+    "frontend": "skipped (backend-only per request)"
+  },
+  "seed_data_creation": "Test fixture seeds 5 users (A,B,F1,F2 with appearance; L legacy without appearance), an A-B cohabitation, and an F1-F2 friendship directly in Mongo via motor; all cleaned up in module teardown. Emails prefixed TEST_APP_ for easy identification.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Appearance feature fully covered in /app/backend/tests/test_appearance_backend.py. Run with EXPO_BACKEND_URL set to the preview host. Regression suites test_peeps_backend.py (17) + test_cohab_backend.py (20) remain green. If main agent adds back-fill in GET /auth/me, update TestAppearanceBackfill::test_legacy_user_me_no_appearance_initially to require appearance present with defaults.",
+  "rca_of_issue": "N/A — no failures."
+}

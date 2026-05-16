@@ -57,6 +57,27 @@ class FriendAddRequest(BaseModel):
 class ChatSend(BaseModel):
     text: str
 
+class AppearanceUpdate(BaseModel):
+    skin: Optional[str] = None
+    eyes: Optional[str] = None
+    eye_color: Optional[str] = None
+    hair_style: Optional[str] = None
+    hair_color: Optional[str] = None
+    shirt_style: Optional[str] = None
+    shirt_color: Optional[str] = None
+    pants_color: Optional[str] = None
+
+DEFAULT_APPEARANCE = {
+    "skin": "#FFE0BD",
+    "eyes": "round",
+    "eye_color": "#3D2C1E",
+    "hair_style": "short",
+    "hair_color": "#3D2C1E",
+    "shirt_style": "tee",
+    "shirt_color": "#FFB5B5",
+    "pants_color": "#7BB8E0",
+}
+
 class CohabInviteCreate(BaseModel):
     to_user_id: str
 
@@ -146,15 +167,20 @@ async def create_session(body: SessionRequest):
             "name": name,
             "picture": picture,
             "friend_code": friend_code,
+            "appearance": dict(DEFAULT_APPEARANCE),
             "created_at": now_iso(),
         }
         await db.users.insert_one(dict(user))
         user.pop("_id", None)
     else:
-        # refresh name/picture
+        # refresh name/picture; ensure appearance field exists
+        sets = {"name": name, "picture": picture}
+        if "appearance" not in user:
+            sets["appearance"] = dict(DEFAULT_APPEARANCE)
+            user["appearance"] = dict(DEFAULT_APPEARANCE)
         await db.users.update_one(
             {"user_id": user["user_id"]},
-            {"$set": {"name": name, "picture": picture}},
+            {"$set": sets},
         )
         user["name"] = name
         user["picture"] = picture
@@ -191,6 +217,18 @@ async def logout(authorization: Optional[str] = Header(None)):
         token = authorization[7:]
         await db.user_sessions.delete_one({"session_token": token})
     return {"ok": True}
+
+
+@api_router.put("/auth/appearance")
+async def update_appearance(body: AppearanceUpdate, authorization: Optional[str] = Header(None)):
+    me = await get_current_user(authorization)
+    current = me.get("appearance") or dict(DEFAULT_APPEARANCE)
+    for k, v in body.dict(exclude_unset=True).items():
+        if v is not None:
+            current[k] = v
+    await db.users.update_one({"user_id": me["user_id"]}, {"$set": {"appearance": current}})
+    user = await db.users.find_one({"user_id": me["user_id"]}, {"_id": 0})
+    return user
 
 
 # ---------- Catalog ----------
