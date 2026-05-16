@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Image,
-  ImageBackground,
   TouchableOpacity,
   Modal,
   ScrollView,
@@ -18,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { api, getToken, BACKEND_URL } from "@/src/lib/api";
 import { useAuth } from "@/src/context/AuthContext";
-import { colors, ISO_FURNITURE, ROOM_BG, FURNITURE_EMOJI } from "@/src/theme";
+import { colors, ISO_FURNITURE, FURNITURE_EMOJI } from "@/src/theme";
 import { Avatar } from "@/src/components/Avatar";
 import { Joystick } from "@/src/components/Joystick";
 
@@ -296,7 +295,10 @@ export default function HouseScreen() {
           onPress={onRoomPress}
           style={styles.room}
         >
-          <ImageBackground source={{ uri: ROOM_BG }} style={styles.bg} resizeMode="cover">
+          <View style={styles.flatRoom}>
+            <View style={styles.wall} />
+            <View style={styles.floor} />
+            <View style={styles.skirtingLine} />
             {/* Render iso items, sorted by y for z-order */}
             {sortedItems.map((it) => {
               const isSelected = selectedId === it.item_id;
@@ -341,7 +343,7 @@ export default function HouseScreen() {
                   isMe={c.isMe}
                 />
               ))}
-          </ImageBackground>
+          </View>
         </Pressable>
 
         {editMode && (
@@ -490,7 +492,11 @@ const styles = StyleSheet.create({
   modePillActiveCohab: { backgroundColor: colors.primary, borderColor: colors.primary },
   modeText: { fontWeight: "800", color: colors.text, fontSize: 13 },
   roomWrap: { flex: 1, paddingHorizontal: 16 },
-  room: { flex: 1, borderRadius: 32, overflow: "hidden", backgroundColor: colors.accent },
+  room: { flex: 1, borderRadius: 32, overflow: "hidden", backgroundColor: "#FFF1E5" },
+  flatRoom: { flex: 1, position: "relative" },
+  wall: { position: "absolute", top: 0, left: 0, right: 0, height: "35%", backgroundColor: "#FFE8D6" },
+  floor: { position: "absolute", top: "35%", left: 0, right: 0, bottom: 0, backgroundColor: "#FFEAD6" },
+  skirtingLine: { position: "absolute", top: "35%", left: 0, right: 0, height: 4, backgroundColor: "#E8C9A8" },
   bg: { flex: 1, position: "relative" },
   furniture: { position: "absolute", alignItems: "center", justifyContent: "center" },
   furnitureSelected: { borderWidth: 3, borderColor: colors.primary, borderRadius: 12 },

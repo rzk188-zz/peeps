@@ -6,26 +6,31 @@ import { CHIBI_ASSETS } from "@/src/theme";
 type Props = {
   appearance?: Partial<Appearance> | null;
   size?: number;
-  walking?: boolean; // when true, cycle walk frames
+  walking?: boolean;
 };
 
 const FRAME_MS = 220;
+const HAIR_KEYS = new Set(["short", "long", "twin", "bun", "beanie", "curly"]);
+const OUTFIT_KEYS = new Set(["tee", "dress", "hoodie", "overalls", "pajamas", "sweater"]);
 
-/**
- * Layered chibi avatar:
- *  - base body image (idle / walk_a / walk_b)
- *  - hair overlay (tinted with hair_color)
- *  - outfit overlay
- */
+function normalize(a?: Partial<Appearance> | null): Appearance {
+  const merged: Appearance = { ...DEFAULT_APPEARANCE, ...(a || {}) };
+  // Migrate legacy shirt_style -> outfit
+  if (!OUTFIT_KEYS.has(merged.outfit)) {
+    const legacy = (a as any)?.shirt_style;
+    merged.outfit = OUTFIT_KEYS.has(legacy) ? legacy : "tee";
+  }
+  if (!HAIR_KEYS.has(merged.hair_style)) merged.hair_style = "short";
+  if (!merged.hair_color) merged.hair_color = DEFAULT_APPEARANCE.hair_color;
+  return merged;
+}
+
 export function Avatar({ appearance, size = 100, walking = false }: Props) {
-  const a: Appearance = { ...DEFAULT_APPEARANCE, ...(appearance || {}) };
+  const a = normalize(appearance);
   const [frame, setFrame] = useState<"idle" | "a" | "b">("idle");
 
   useEffect(() => {
-    if (!walking) {
-      setFrame("idle");
-      return;
-    }
+    if (!walking) { setFrame("idle"); return; }
     let toggle = false;
     const id = setInterval(() => {
       toggle = !toggle;
@@ -35,12 +40,9 @@ export function Avatar({ appearance, size = 100, walking = false }: Props) {
   }, [walking]);
 
   const bodyUrl =
-    frame === "a"
-      ? CHIBI_ASSETS.body_walk_a
-      : frame === "b"
-      ? CHIBI_ASSETS.body_walk_b
-      : CHIBI_ASSETS.body_idle;
-
+    frame === "a" ? CHIBI_ASSETS.body_walk_a :
+    frame === "b" ? CHIBI_ASSETS.body_walk_b :
+    CHIBI_ASSETS.body_idle;
   const hairUrl = (CHIBI_ASSETS as any)[`hair_${a.hair_style}`];
   const outfitUrl = (CHIBI_ASSETS as any)[`outfit_${a.outfit}`];
 
@@ -49,25 +51,13 @@ export function Avatar({ appearance, size = 100, walking = false }: Props) {
 
   return (
     <View style={{ width: W, height: H }} pointerEvents="none">
-      <Image
-        source={{ uri: bodyUrl }}
-        style={[styles.layer, { width: W, height: H }]}
-        resizeMode="contain"
-      />
-      {outfitUrl && (
-        <Image
-          source={{ uri: outfitUrl }}
-          style={[styles.layer, { width: W, height: H }]}
-          resizeMode="contain"
-        />
-      )}
-      {hairUrl && (
-        <Image
-          source={{ uri: hairUrl }}
-          style={[styles.layer, { width: W, height: H, tintColor: a.hair_color }]}
-          resizeMode="contain"
-        />
-      )}
+      <Image source={{ uri: bodyUrl }} style={[styles.layer, { width: W, height: H }]} resizeMode="contain" />
+      {outfitUrl ? (
+        <Image source={{ uri: outfitUrl }} style={[styles.layer, { width: W, height: H }]} resizeMode="contain" />
+      ) : null}
+      {hairUrl ? (
+        <Image source={{ uri: hairUrl }} style={[styles.layer, { width: W, height: H, tintColor: a.hair_color }]} resizeMode="contain" />
+      ) : null}
     </View>
   );
 }
