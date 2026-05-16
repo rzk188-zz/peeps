@@ -629,7 +629,10 @@ async def ws_room(websocket: WebSocket):
             elif mtype == "ping":
                 await websocket.send_json({"type": "pong"})
     except (WebSocketDisconnect, asyncio.TimeoutError):
-        pass
+        try:
+            await websocket.close(code=4008)
+        except Exception:
+            pass
     except Exception as e:
         logger.warning(f"ws error: {e}")
     finally:
