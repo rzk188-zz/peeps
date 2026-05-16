@@ -57,6 +57,15 @@ class FriendAddRequest(BaseModel):
 class ChatSend(BaseModel):
     text: str
 
+class CohabInviteCreate(BaseModel):
+    to_user_id: str
+
+class CohabHouseUpdate(BaseModel):
+    items: Optional[List[FurnitureItem]] = None
+    avatar_x: Optional[float] = None
+    avatar_y: Optional[float] = None
+    house_name: Optional[str] = None
+
 
 # ---------- Helpers ----------
 def now_iso() -> str:
